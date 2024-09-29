@@ -48,4 +48,7 @@ cpy ldd ,u++
  jmp $2602
 
 boottrack
+
+* Bootstrap modules REL, BOOT, and KRN will get appened here.
+
  end

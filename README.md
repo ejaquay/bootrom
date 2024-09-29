@@ -5,7 +5,7 @@ This project is to create a bootstrap.rom that contains the first stage bootstra
 
 A Nitros9 stage one bootstrap contains the modules REL, BOOT, and KRN and is often refered to as the "boottrack" because it normally resides on track 34 of a bootable Os9 disk.  Typically Nitros9 is booted by typing the "DOS" command from Disk Extended Color Basic. The 'DOS' command then reads the boottrack from the floppy disk and executes it.
 
-Disk Extended Color Basic (DECB) is in a rom within the FD502 Floppy Disk Controller. This project would replace that rom in the emulation environment with a simple Nitros9 booter. This would eliminate the need for a boot floppy or it's emulated equivalent. It would also simplify system configuration by eliminating the need for a disk to contain the bootstrap. Floppy and hard disk access would still be available using Nitros9 drivers. As long as the second stage boot file (Os9Boot) is intact and the bootstrap can find it the boot can proceed.
+Disk Extended Color Basic (DECB) is in a rom within the FD502 Floppy Disk Controller. This project would replace that rom in the emulation environment with a simple Nitros9 booter. This would eliminate the need for a boot floppy or it's emulated equivalent. It would also simplify system configuration by eliminating the need for a disk to contain the bootstrap. Floppy and hard disk access would still be available using Nitros9 drivers. As long as the second stage boot file (OS9Boot) is intact and the bootstrap can find it the boot can proceed.
 
 # Some detail about the Nitros9 booting process
 
@@ -28,9 +28,9 @@ On disk the second stage bootstrap typically resides in the OS9boot file but it'
     DD.BSZ is the size of the bootstrap file if it is contigious.
 ```
 
-If DD.BSZ is non zero it is assumed that Os9Boot is contigious and DD.BT is the sector it starts on. A Nitros9 enhancement permits the use of a non-contigious OS9Boot file - If DD.BSZ is zero then DD.BT points to the sector containing the Os9Boot file's descriptor instead of the file it'self. The file descriptor contains a null terminated list of segments containing OS9Boot. The segment list contains up to 48 entries containing the size and location of each file segment.
+If DD.BSZ is non zero it is assumed that OS9Boot is contigious and DD.BT is the sector it starts on. A Nitros9 enhancement permits the use of a non-contigious OS9Boot file - If DD.BSZ is zero then DD.BT points to the sector containing the OS9Boot file's descriptor instead of the file it'self. The file descriptor contains a null terminated list of segments containing OS9Boot. The segment list contains up to 48 entries containing the size and location of each file segment.
 
-Since the target of this project is the virtual environment a BOOT that works with virtual harddrives is desired. A early step was to improve the booter for virtual hardrives. Robert Gault wrote a vhd booter called boot_vhd to use for with the very nice RGBDOS system which allows a vhd to contain 255 virtual floppies as well as contain a complete OS9/Nitros9 system. That booter is used to boot Os9 and Nitros9 from RGBDOS virtual hard drives and works well for that purpose.  It's source is in the nitros9 third party section. However it can not boot non-contigous Os9Boot files.
+Since the target of this project is the virtual environment a BOOT that works with virtual harddrives is desired. A early step was to improve the booter for virtual harddrives. Robert Gault wrote a vhd booter called boot_vhd to use for with the very nice RGBDOS system which allows a vhd to contain 255 virtual floppies as well as contain a complete OS9/Nitros9 system. That booter is used to boot Os9 and Nitros9 from RGBDOS virtual hard drives and works well for that purpose.  It's source is in the nitros9 third party section. However it can not boot non-contigous OS9Boot files.
 
 The ability to boot from a non-contiguous OS9Boot greatly simplifies the process of modifying it and the Nitros9 Ease Of Use Project relies on this capability to allow use of it's swapboot utility.  So I created boot_emu, a vhd booter that can deal with non-contigous boot files.  All the hard lifting for dealing with the segment list was already done, the only part I needed to write was initializing and reading a vhd sector.  I was able to add boot_emu to the Nitros9 project and source for it is available on gitbub.
 
@@ -59,11 +59,11 @@ If the segment type is zero the segment is data. DECB will move it to the specif
    echo ff 00 00 26 02 | xxd -r -p >> emuboot.bin # execute at $2602
 ```
 
-This creates a emuboot.bin that VCC will load and execute using it's quickload feature.  In the process of testing I discovered that OS9Boot must contain the emudsk module to actually read from virtual hard drives.  I also had to switch clock2 with clock2_cloud9 to use the clock in harddisk.dll. I used EOU swapboot to change Os9boot. The ability to handle non-contigous OS9Boot file came in handy right off the bat!
+This creates a emuboot.bin that VCC will load and execute using it's quickload feature.  In the process of testing I discovered that OS9Boot must contain the emudsk module to actually read from virtual hard drives.  I also had to switch clock2 with clock2_cloud9 to use the clock in harddisk.dll. I used EOU swapboot to change OS9boot. The ability to handle non-contigous OS9Boot file came in handy right off the bat!
 
-The next step was to try to create a ROM with my proven to work bootstrap. This initially proved to be quite simple. I wrote a tiny bit of 6309 code, assembled it with lwasm and tacked the boottrack on to the result:
+The next step was to try to create a ROM with my proven bootstrap. I wrote a tiny bit of 6309 code, assembled it with lwasm and appended the boot modules to the result:
 
-The code (bootstrap.asm):
+bootstrap.asm:
 ```
     org $C000
     ldu #boottrk  ; where bootrack is in ROM
@@ -72,6 +72,7 @@ The code (bootstrap.asm):
     tfm u+,y+     ; do the copy
     jmp $2602     ; Run the booter
   boottrk         ; Boot modules go here
+    end
 ```
 
 To create the ROM:
@@ -92,5 +93,4 @@ I knew the bootstrap image was being trashed somehow but I was not sure where or
   sta $FF90      ; map 16k external
   clr $FFDE      ; Switch to ROM mode.
 ```
-
 

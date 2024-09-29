@@ -15,7 +15,6 @@ KRN  = $(NITROS9DIR)/level2/coco3_6309/modules/krn
 
 all: bootstrap.rom
 
-# Clean is necessary after changing this makefile
 clean:
 	@rm -f bootstrap bootstrap.rom
 
