@@ -13,20 +13,20 @@ The first two bytes of the Nitros9 boottrack is the string "OS" followed by the 
 
 Within the $1200 (4608) byte first stage bootstrap are the Nitros9 modules REL, KRN, and BOOT arranged as follows:
 
-`
+```
     REL  0000 - 012F   $130 bytes (304)
     BOOT 0130 - 02ff   $1D0 bytes (464)
     KRN  0300 - 11FF   $FOO bytes (3840)
-`
+```
 
 REL is executed first. It moves the bootstrap modules to high ram, and prints 'NITROS9 BOOT' or 'NITROS 6309' on the screen. REL then calls KRN init.  KRN init places a 'K' on screen, sets up the system, and validates the REL, BOOT, and KRN modules, printing their names as it does.  KRN init then calls F$Boot which puts a 't' on the screen, links the BOOT module, and then calls it. BOOT locates the second stage bootstrap and loads and validates it's modules. The second stage bootstrap contains KRNp2 and all required system modules. The kernel then locates and executes sysgo to start user processes.
 
 On disk the second stage bootstrap typically resides in the OS9boot file but it's name is not important to the booting process.  BOOT finds it by examining logical sector zero (LSN0) on the disk.  LSN0 contains two fields of importance to the boot process, DD.BT and DD.BSZ.
 
-`
+```
     DD.BT  locates the second stage bootstrap file.
     DD.BSZ is the size of the bootstrap file if it is contigious.
-`
+```
 
 If DD.BSZ is non zero it is assumed that Os9Boot is contigious and DD.BT is the sector it starts on. A Nitros9 enhancement permits the use of a non-contigious OS9Boot file - If DD.BSZ is zero then DD.BT points to the sector containing the Os9Boot file's descriptor instead of the file it'self. The file descriptor contains a null terminated list of segments containing OS9Boot. The segment list contains up to 48 entries containing the size and location of each file segment.
 
@@ -38,33 +38,33 @@ The ability to boot from a non-contiguous OS9Boot greatly simplifies the process
 
 I created a boottrack file by combining my desired REL, BOOT, and KRN from Nitros9: (My work was done on WSL and examples are linux shell commands)
 
-`
+```
    cat rel_80_3309 boot_emu krn_6309 > boottrack
-`
+```
 
 Next was a proof of concept - to put the boottrack in a Coco bin file that will load and boot Nitros9. Coco bin files consist of one or more segments followed by a terminator segment. They have a 5 byte header:
 
-`
+```
    byte len    description
      0   1   type (0 or 255)
      1   2   length
      3   2   address  
-`
+```
 
 If the segment type is zero the segment is data. DECB will move it to the specified address. If the type is 255 the segment is a terminatoor and the address is the execution address.  To convert the boottrack file to a coco binary all that is needed is to prepend a 5 byte header and a 5 byte trailer to it:
 
-`
+```
    echo 00 12 00 26 00 | xxd -r -p > emuboot.bin  # $1200 bytes at $2600
    cat boottrack >> emuboot.bin                   # boot modules go here
    echo ff 00 00 26 02 | xxd -r -p >> emuboot.bin # execute at $2602
-`
+```
 
 This creates a emuboot.bin that VCC will load and execute using it's quickload feature.  In the process of testing I discovered that OS9Boot must contain the emudsk module to actually read from virtual hard drives.  I also had to switch clock2 with clock2_cloud9 to use the clock in harddisk.dll. I used EOU swapboot to change Os9boot. The ability to handle non-contigous OS9Boot file came in handy right off the bat!
 
 The next step was to try to create a ROM with my proven to work bootstrap. This initially proved to be quite simple. I wrote a tiny bit of 6309 code, assembled it with lwasm and tacked the boottrack on to the result:
 
 The code (bootstrap.asm):
-`
+```
     org $C000
     ldu #boottrk  ; where bootrack is in ROM
     ldy #$2600    ; where it goes in low RAM
@@ -72,14 +72,14 @@ The code (bootstrap.asm):
     tfm u+,y+     ; do the copy
     jmp $2602     ; Run the booter
   boottrk         ; Boot modules go here
-`
+```
 
 To create the ROM:
 
-`
+```
     lwasm --raw -o bootstrap bootstrap.asm
     cat bootstrap rel_80_3309 boot_emu krn_6309 > bootstrap.rom
-`
+```
 
 This worked when used as a standalone rom cart on VCC and also on MAME.  I prettied up the code by adding some directives for 6809 and nice comments and I thought I was done.  But I was not.  I had wanted to use boot.rom instead of disk11.rom as the external rom for the FD502 cart so I did not burn an extra MMI slot just to boot Nitros9.  When I tried that it did not work.
 
@@ -87,10 +87,10 @@ This began some frustration trying to understand why. I soon realized that Exten
 
 I knew the bootstrap image was being trashed somehow but I was not sure where or how so I created a dummy bootstrap containing only text and added a break (lwasm emuext opcode) to my program before it copied the modules to $2600. When I examined my dummy text in memory I discovered the bootstrap was being trashed before my program ran. I should have realized that Super Extended Basic had already moved the rom to ram and modified it. The fix was simple - set the gime to ROM mode before copying the bootstrap:
 
-`
+```
   lda #$CC       ; Tell GIME to
   sta $FF90      ; map 16k external
   clr $FFDE      ; Switch to ROM mode.
-`
+```
 
 
