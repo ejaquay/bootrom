@@ -13,13 +13,18 @@
 
  org $C000
 
- fcc "DK"
+ fcc "DK"   	LSRA + illegal ins
 
 * When Super Extended Basic sees a rom starting with "DK" it 
 * is processed as a disk11 rom. Basic copies it to ram then 
 * makes changes to it before jumping to $C002. We need to set 
-* ROM mode to avoid those changes.
+* ROM mode to avoid those changes. With VCC a rom containg "DK"
+* can still fail to boot if runing at less than 3 MHz when
+* loaded as at standalone cart rather than an FD502 rom unless
+* "AutoStart Cart" is unchecked in VCC's misc config dialog.
+* Alternatly just create a ROM with no "DK" for standalone use.
 
+start
  lda #$CC       Tell GIME to 
  sta $FF90      map 16k external
  clr $FFDE      Switch to ROM mode.
