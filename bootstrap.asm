@@ -2,7 +2,8 @@
 * Emulator bootstrap rom for Coco3 NitrOS9.
 *
 * After assembly boottrack with boot_emu is appended.
-*	lwasm --raw -o bootstrap bootstrap.asm
+*   ops="--raw -D DISKROM=1 -D H6309=1 -D DEBUG=0"
+*	lwasm $ops -o bootstrap bootstrap.asm
 *   cat bootstrap boottrack > bootstrap.rom 
 *   truncate -s 8192 bootstrap.rom
 *
@@ -13,21 +14,17 @@
 
  org $C000
 
- fcc "DK"   	LSRA + illegal ins
-
 * When Super Extended Basic sees a rom starting with "DK" it 
 * is processed as a disk11 rom. Basic copies it to ram then 
 * makes changes to it before jumping to $C002. We need to set 
-* ROM mode to avoid those changes. With VCC a rom containg "DK"
-* can still fail to boot if runing at less than 3 MHz when
-* loaded as at standalone cart rather than an FD502 rom unless
-* "AutoStart Cart" is unchecked in VCC's misc config dialog.
-* Alternatly just create a ROM with no "DK" for standalone use.
+* ROM mode to avoid those changes.
 
-start
- lda #$CC       Tell GIME to 
- sta $FF90      map 16k external
- clr $FFDE      Switch to ROM mode.
+ IFNE DISKROM
+  fcc "DK"       ROM to disk11 rom 
+  lda #$CC       Tell GIME to 
+  sta $FF90      map 16k external
+  clr $FFDE      Switch to ROM mode.
+ ENDC
 
 * Copy bootstrap containing REL, BOOT, and KRN to $2600.
 
@@ -45,7 +42,11 @@ cpy ldd ,u++
   bne cpy
  ENDC
 
-* break
+* For debugging break to check the copy
+
+ IFNE DEBUG
+  break
+ ENDC
 
 * Jump to start of REL. REL will relocate the modules to high
 * memory where they will stay resident until system goes down.
