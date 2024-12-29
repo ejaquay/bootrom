@@ -5,7 +5,7 @@ This project creates a bootstrap rom to replace disk11 rom. The bootstrap rom co
 
 ### Some detail about the Nitros9 booting process
 
-The first two bytes of the Nitros9 boottrack is the string "OS" followed by the bootstrap code. To boot Nitros9 from floppy DECB needs only to copy the boottrack to $2600 and then jump to $2602.
+The first two bytes of the Nitros9 boottrack is the string "OS" followed by the bootstrap code. To boot Nitros9 from floppy DECB (Disk Extended Color Basic) needs only to copy the boottrack to $2600 and then jump to $2602.
 
 Within the $1200 (4608) byte first stage bootstrap are the Nitros9 modules REL, KRN, and BOOT arranged as follows:
 
@@ -62,7 +62,7 @@ I also created an OS9Boot file that contains the emudsk module to read virtual d
 
 This worked when used as a standalone rom cart on VCC and also on MAME.  I prettied up the code by adding some directives for 6809 and nice comments.   I had intended to the bootstrap.rom instead of disk11.rom as the external rom for the FD502 cart so I did not burn an extra MMI slot just to boot Nitros9.  When I tried that it did not work.
 
-TI soon realized that Extended Color Basic was ignoring my boot.rom because there was no 'DK' at it's start. When I added a 'DK' the real fun began. Nitros would sort of try to boot but would crash with various colorful patterns on the screen.
+I soon realized that DECB was ignoring my boot.rom because there was no 'DK' at it's start. When I added a 'DK' the real fun began. Nitros would sort of try to boot but would crash with various colorful patterns on the screen.
 
 I knew the bootstrap image was being trashed somehow but I was not sure where or how so I created a dummy bootstrap containing only text and added a break (lwasm emuext opcode) to my program before it copied the modules to $2600. When I examined my dummy text in memory I discovered the bootstrap was being trashed before my program ran. I should have realized that Super Extended Basic had already moved the rom to ram and modified it. The fix was simple - set the gime to ROM mode before copying the bootstrap:
 
