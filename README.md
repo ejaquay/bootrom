@@ -38,9 +38,7 @@ I created a boottrack file by combining my desired REL, BOOT, and KRN from Nitro
    cat rel_80_3309 boot_emu krn_6309 > boottrack
 ```
 
-The OS9Boot file must contain the emudsk module to read virtual disks and clock2_cloud9 should be used for the clock from harddisk.dll instead of the clock in fd502.dll.
-
-The next step was to create a ROM with my bootstrap. I wrote a tiny bit of 6309 code, assembled it with lwasm and appended the boot modules to the result:
+Next I created a ROM containing the bootstrap that could be loaded as a VCC cart.  I wrote a tiny bit of 6309 code, assembled it with lwasm and appended the boot modules to the result:
 
 bootstrap.asm:
 ```
@@ -60,10 +58,11 @@ To create the ROM:
     lwasm --raw -o bootstrap bootstrap.asm
     cat bootstrap rel_80_3309 boot_emu krn_6309 > bootstrap.rom
 ```
+I also created an OS9Boot file that contains the emudsk module to read virtual disks, used clock2_cloud9 for the clock2 module, and set the DD descriptor to the first hard drive.
 
-This worked when used as a standalone rom cart on VCC and also on MAME.  I prettied up the code by adding some directives for 6809 and nice comments and I thought I was done.  But I was not.  I had wanted to use boot.rom instead of disk11.rom as the external rom for the FD502 cart so I did not burn an extra MMI slot just to boot Nitros9.  When I tried that it did not work.
+This worked when used as a standalone rom cart on VCC and also on MAME.  I prettied up the code by adding some directives for 6809 and nice comments.   I had intended to the bootstrap.rom instead of disk11.rom as the external rom for the FD502 cart so I did not burn an extra MMI slot just to boot Nitros9.  When I tried that it did not work.
 
-This began some frustration trying to understand why. I soon realized that Extended Color Basic was ignoring my boot.rom because there was no 'DK' at it's start. When I added a 'DK' the real fun began. Nitros would sort of try to boot but would crash with various colorful patterns on the screen.
+TI soon realized that Extended Color Basic was ignoring my boot.rom because there was no 'DK' at it's start. When I added a 'DK' the real fun began. Nitros would sort of try to boot but would crash with various colorful patterns on the screen.
 
 I knew the bootstrap image was being trashed somehow but I was not sure where or how so I created a dummy bootstrap containing only text and added a break (lwasm emuext opcode) to my program before it copied the modules to $2600. When I examined my dummy text in memory I discovered the bootstrap was being trashed before my program ran. I should have realized that Super Extended Basic had already moved the rom to ram and modified it. The fix was simple - set the gime to ROM mode before copying the bootstrap:
 
@@ -74,4 +73,3 @@ I knew the bootstrap image was being trashed somehow but I was not sure where or
 ```
 
 The finalized source and makefile is provided here.
-
