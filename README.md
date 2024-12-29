@@ -26,9 +26,9 @@ On disk the second stage bootstrap typically resides in the OS9boot file but it'
 
 If DD.BSZ is non zero it is assumed that OS9Boot is contigious and DD.BT is the sector it starts on. A Nitros9 enhancement permits the use of a non-contigious OS9Boot file - If DD.BSZ is zero then DD.BT points to the sector containing the OS9Boot file's descriptor instead of the file it'self. The file descriptor contains a null terminated list of segments containing OS9Boot. The segment list contains up to 48 entries containing the size and location of each file segment.
 
-Since the target of this project is the virtual environment a BOOT that works with virtual harddrives is desired. A early step was to improve the booter for virtual harddrives. Robert Gault wrote a vhd booter called boot_vhd to use for with the very nice RGBDOS system which allows a vhd to contain 255 virtual floppies as well as contain a complete OS9/Nitros9 system. That booter is used to boot Os9 and Nitros9 from RGBDOS virtual hard drives and works well for that purpose.  It's source is in the nitros9 third party section. However it can not boot non-contigous OS9Boot files.
+Since the target of this project is the virtual environment a BOOT that works with a virtual hard disk (VHD) is desired. Robert Gault wrote a VHD booter called boot_vhd to use for with the very nice RGBDOS system. Robert's booter is used to boot Os9 and Nitros9 from RGBDOS virtual hard drives and works well for that purpose.  It's source is in the nitros9 third party section. However it can not boot non-contigous OS9Boot files.
 
-The ability to boot from a non-contiguous OS9Boot greatly simplifies the process of modifying it and the Nitros9 Ease Of Use Project relies on this capability to allow use of it's swapboot utility.  So I created boot_emu, a vhd booter that can deal with non-contigous boot files.  All the hard lifting for dealing with the segment list was already done, the only part I needed to write was initializing and reading a vhd sector.  I was able to add boot_emu to the Nitros9 project and source for it is available on that project's github.
+The ability to boot from a non-contiguous OS9Boot greatly simplifies the process of modifying it and the Nitros9 Ease Of Use Project relies on this capability to allow use of it's swapboot utility.  So I created boot_emu, a VHD booter that can deal with non-contigous boot files.  All the hard lifting for dealing with the segment list was already done, the only part I needed to write was initializing and reading a disk sector.  I was able to add boot_emu to the Nitros9 project and source for it is available on that project's github.
 
 ### Creating the bootstrap rom
 
@@ -60,11 +60,11 @@ To create the ROM:
 ```
 I also created an OS9Boot file that contains the emudsk module to read virtual disks, used clock2_cloud9 for the clock2 module, and set the DD descriptor to the first hard drive.
 
-This worked when used as a standalone rom cart on VCC and also on MAME.  I prettied up the code by adding some directives for 6809 and nice comments.   I had intended to the bootstrap.rom instead of disk11.rom as the external rom for the FD502 cart so I did not burn an extra MMI slot just to boot Nitros9.  When I tried that it did not work.
+This worked when used as a standalone rom cart on VCC and also on MAME.  I prettied up the code by adding some directives for 6809 and nice comments.   I had intended to use the bootstrap.rom instead of disk11.rom as the external rom for the FD502 cart so I did not need to use an extra MMI slot just to boot Nitros9.  When I tried that it did not work.
 
-I soon realized that DECB was ignoring my boot.rom because there was no 'DK' at it's start. When I added a 'DK' the real fun began. Nitros would sort of try to boot but would crash with various colorful patterns on the screen.
+I soon realized that DECB was ignoring my boot.rom because there was no 'DK' at it's start. When I added a 'DK' the real fun began. Nitros would try to boot but would quickly crash with various colorful patterns on the screen.
 
-I knew the bootstrap image was being trashed somehow but I was not sure where or how so I created a dummy bootstrap containing only text and added a break (lwasm emuext opcode) to my program before it copied the modules to $2600. When I examined my dummy text in memory I discovered the bootstrap was being trashed before my program ran. I should have realized that Super Extended Basic had already moved the rom to ram and modified it. The fix was simple - set the gime to ROM mode before copying the bootstrap:
+I knew the bootstrap image was being trashed somehow but I was not sure where or how so I created a dummy bootstrap containing only text and added a break (lwasm emuext opcode) to my program before it copied the modules to $2600. When I examined my dummy text in memory I discovered the bootstrap was being modified before my program ran. I should have realized that Super Extended Basic had already moved the rom to ram and modified it. The fix was simple - set the gime to ROM mode before copying the bootstrap:
 
 ```
   lda #$CC       ; Tell GIME to
