@@ -3,7 +3,7 @@
 *
 * After assembly boottrack with boot_emu is appended.
 *   ops="--raw -D DISKROM=1 -D H6309=1 -D DEBUG=0"
-*	lwasm $ops -o bootstrap bootstrap.asm
+*   lwasm $ops -o bootstrap bootstrap.asm
 *   cat bootstrap boottrack > bootstrap.rom 
 *   truncate -s 8192 bootstrap.rom
 *
@@ -17,7 +17,7 @@
 * When Super Extended Basic sees a rom starting with "DK" it 
 * is processed as a disk11 rom. Basic copies it to ram then 
 * makes changes to it before jumping to $C002. We need to set 
-* ROM mode to avoid those changes.
+* back to ROM mode to not see those changes.
 
  IFNE DISKROM
   fcc "DK"       ROM to disk11 rom 
@@ -27,6 +27,10 @@
  ENDC
 
 * Copy bootstrap containing REL, BOOT, and KRN to $2600.
+* REL will copy these to $ED00 and run them.  It is possible
+* to copy bootstrap to $ED00 directly by switching back and
+* forth between ROM and RAM modes as chunks are copied but
+* this is not done here.
 
  ldu #boottrack where the bootstrap modules are
  ldy #$2600     where they are copied to low RAM
