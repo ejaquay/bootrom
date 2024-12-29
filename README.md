@@ -1,9 +1,9 @@
 ## Coco3 Bootstrap Rom
-## A Color Computer 3 rom file for booting Nitros9
+### A Color Computer 3 rom file for booting Nitros9
 
 This project creates a bootstrap rom to replace disk11 rom. The bootstrap rom contains the first stage bootstrap for Nitros9, aka the boottrack.  The intended use of the rom is for booting Nitros9 in an emulator environment but there should be no reason on could not burn a physical ROM that would work if so desired.  It's use eliminates the need for a boottrack on the floppy or other media. Floppy, hard disk, or other media access is still available using Nitros9 drivers. As long as the second stage boot file (OS9Boot) is intact and the bootstrap rom can find it the boot can proceed.
 
-# Some detail about the Nitros9 booting process
+### Some detail about the Nitros9 booting process
 
 The first two bytes of the Nitros9 boottrack is the string "OS" followed by the bootstrap code. To boot Nitros9 from floppy DECB needs only to copy the boottrack to $2600 and then jump to $2602.
 
@@ -28,9 +28,9 @@ If DD.BSZ is non zero it is assumed that OS9Boot is contigious and DD.BT is the 
 
 Since the target of this project is the virtual environment a BOOT that works with virtual harddrives is desired. A early step was to improve the booter for virtual harddrives. Robert Gault wrote a vhd booter called boot_vhd to use for with the very nice RGBDOS system which allows a vhd to contain 255 virtual floppies as well as contain a complete OS9/Nitros9 system. That booter is used to boot Os9 and Nitros9 from RGBDOS virtual hard drives and works well for that purpose.  It's source is in the nitros9 third party section. However it can not boot non-contigous OS9Boot files.
 
-The ability to boot from a non-contiguous OS9Boot greatly simplifies the process of modifying it and the Nitros9 Ease Of Use Project relies on this capability to allow use of it's swapboot utility.  So I created boot_emu, a vhd booter that can deal with non-contigous boot files.  All the hard lifting for dealing with the segment list was already done, the only part I needed to write was initializing and reading a vhd sector.  I was able to add boot_emu to the Nitros9 project and source for it is available on that project's gitbub.
+The ability to boot from a non-contiguous OS9Boot greatly simplifies the process of modifying it and the Nitros9 Ease Of Use Project relies on this capability to allow use of it's swapboot utility.  So I created boot_emu, a vhd booter that can deal with non-contigous boot files.  All the hard lifting for dealing with the segment list was already done, the only part I needed to write was initializing and reading a vhd sector.  I was able to add boot_emu to the Nitros9 project and source for it is available on that project's github.
 
-# Creating the bootstrap rom
+### Creating the bootstrap rom
 
 I created a boottrack file by combining my desired REL, BOOT, and KRN from Nitros9: (My work was done on WSL and examples are linux shell commands)
 
@@ -38,9 +38,9 @@ I created a boottrack file by combining my desired REL, BOOT, and KRN from Nitro
    cat rel_80_3309 boot_emu krn_6309 > boottrack
 ```
 
-The OS9Boot file must contain the emudsk module to read virtual disks and the clock2 module should use clock2_cloud9 to use the clock in harddisk.dll instead of the clock in fd502.dll.
+The OS9Boot file must contain the emudsk module to read virtual disks and clock2_cloud9 should be used for the clock from harddisk.dll instead of the clock in fd502.dll.
 
-The next step was to try to create a ROM with my proven bootstrap. I wrote a tiny bit of 6309 code, assembled it with lwasm and appended the boot modules to the result:
+The next step was to create a ROM with my bootstrap. I wrote a tiny bit of 6309 code, assembled it with lwasm and appended the boot modules to the result:
 
 bootstrap.asm:
 ```
@@ -74,5 +74,4 @@ I knew the bootstrap image was being trashed somehow but I was not sure where or
 ```
 
 The finalized source and makefile is provided here.
-
 
