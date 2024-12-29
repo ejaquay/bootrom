@@ -32,7 +32,7 @@ The ability to boot from a non-contiguous OS9Boot greatly simplifies the process
 
 ### Creating the bootstrap rom
 
-I created a boottrack file by combining my desired REL, BOOT, and KRN from Nitros9: (My work was done on WSL and examples are linux shell commands)
+I created a boottrack file by combining my desired REL, BOOT, and KRN from Nitros9: (My work was done on linux and examples are linux shell commands)
 
 ```
    cat rel_80_3309 boot_emu krn_6309 > boottrack
